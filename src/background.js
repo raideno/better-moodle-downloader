@@ -48,7 +48,11 @@ function HtmlTableDataParser(table) {
 
 		// NOTE: if the section name is empty, we should use the previous section name
 		if (rowData[0].name === '')
-			rowData[0].name = rawData[rawData.length - 1][0].name;
+			try {
+				rowData[0].name = rawData[rawData.length - 1][0].name;
+			} catch (error) {
+				rowData[0].name = "unknown-section";
+			}
 
 		rawData.push(rowData);
 	}
