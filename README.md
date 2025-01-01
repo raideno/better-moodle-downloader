@@ -12,17 +12,33 @@ A very easy to use browser extension for downloading all the resources from a mo
 
 ## Installation 💻
 
-Install the latest version of MoodleDownloader from the [Chrome Web Store](https://chrome.google.com/webstore/detail/moodle-downloader/ohhocacnnfaiphiahofcnfakdcfldbnh).
+### From a Store
 
-Alternatively, if you prefer installing it manually, the latest archive can be found [Here](https://github.com/harsilspatel/MoodleDownloader/releases/latest).
+- Chromium Based Browsers (Google Chrome, Vivaldi, etc): [Chrome Web Store](https://chromewebstore.google.com/category/extensions).
+- Firefox: [Firefox Browser ADD-ONS](https://addons.mozilla.org/en-US/firefox/extensions/).
+- Safari: [Apple Extensions](https://developer.apple.com/safari/extensions/).
+
+### Manual Installation for Chrome
+
+- **Chrome:**
+  1. Download the latest release build source code.
+  2. Unzip it and put it in the file of your choice.
+  3. Go to the [Extensions Page](https://google.come).
+  4. Enable the developer mode (top right).
+  5. Click on "Load Extension".
+  6. Select the folder that you just unzipped.
+  7. You are done.
+- **FireFox:**
+  1. Same steps as for Chrome, only the [Extension Page](https://google.come) is different.
+- **Safari:** You basically can't.
 
 ## Usage 🛠
 
-1. Login in to your moodle (for example https://moodle.vle.monash.edu)
-2. Open the week (section) from where you would like to download the resources from
-3. Click on the extension icon and select the resources to be downloaded.
-   - Click and drag or use ⌘ key to select multiple options:
-4. Hit the `Download` button to get the resources!
+1. Go to the page of the moodle course you want to download the resources from.
+2. Click on the "Go to Resources Page" button.
+3. Open the extension and select the resources you want to download.
+4. Click on the download button.
+5. Here you go, you'll find a zip file in your downloads folder.
 
 #### Credits 👏🏻
 
