@@ -44,8 +44,19 @@
 
       <!-- CARD CONTENT -->
       <div class="w-full p-4 border-b border-gray-500 space-y-2">
-        <div class="border rounded border-gray-500 active:border-blue-500">
-          <input class="w-full p-2 rounded" placeholder="search (regex is supported)" type="text" id="search">
+        <div class="h-9 flex flex-row items-center justify-between gap-2">
+          <div class="h-full w-full border rounded border-gray-500 active:border-blue-500">
+            <input class="w-full p-2 rounded" placeholder="search (regex is supported)" type="text" id="search">
+          </div>
+
+          <div
+            class="h-full w-24 border rounded border-gray-500 flex items-center justify-center active:border-blue-500">
+            <select id="resources-type-selector">
+              <option value="all">All</option>
+              <option value="pdf">Pdf</option>
+              <option value="docx">Docx</option>
+            </select>
+          </div>
         </div>
 
         <div class="w-full p-2 rounded border border-gray-500 active:border-blue-500">
