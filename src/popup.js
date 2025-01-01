@@ -11,17 +11,15 @@ import { AreWeInMoodleSite, AreWeInMoodleCoursePage, AreWeInMoodleResourcesSecti
 
 // TODO: re-implement google analytics.
 
-// TODO: completely block the extension if we are not in a moodle page, to start with check that the url contains "moodle" in it, then make it more sofisticated by checking the page content, etc.
-// TODO: if the person isn't in a moodle page, display a blur with a message, but still give the option to display the extension and download in case the system hasn't been able to detect the moodle page.
-// TODO: give the choice for the user to manually enter the moodle course id, and then scrape the resources from the resources page.
-// TODO: give instructions, like some note with instructions that redirect to a video or something that shows how to download.
-// TODO: display the blur thing with a different message when the user is in a moodle site but not in a course page.
+// TODO: for links, beside the original type we should add another one called "resolved-type" which will be the type of the resolved link.
 
 const BACKGROUND_SCRIPT_FILE_PATH = "./src/background.js";
 
 const RESOURCES_SELECTOR_ID = "resources-selector";
 const MAIN_BUTTON_ID = "main-button";
 const RESOURCES_SEARCH_INPUT_ID = "search";
+
+const RESOURCES_TYPES_SELECTOR_ID = "resources-type-selector";
 
 let resources = [];
 
@@ -66,9 +64,12 @@ const LoadResources = () => {
 // NOTE: if the main function is executed, assume we are already in a moodle course page but not necessarily in the resources page.
 const Main = async () => {
     const button = document.getElementById(MAIN_BUTTON_ID);
-    const input = document.getElementById(RESOURCES_SEARCH_INPUT_ID);
 
-    SetupEventListener(input, "input", FilterOptions);
+    const ResourcesSearchInput = document.getElementById(RESOURCES_SEARCH_INPUT_ID);
+    const ResourcesTypeSelector = document.getElementById(RESOURCES_TYPES_SELECTOR_ID);
+
+    SetupEventListener(ResourcesSearchInput, "input", FilterOptions);
+    SetupEventListener(ResourcesTypeSelector, "change", FilterOptions);
 
     const tabUrl = await GetActiveTabUrl();
 
@@ -121,18 +122,26 @@ const Main = async () => {
 
         SetupEventListener(button, "click", DownloadSelectedResources);
     }
-
 }
 
 const FilterOptions = () => {
-    const search = document.getElementById(RESOURCES_SEARCH_INPUT_ID);
-    const query = search.value.toLowerCase();
+    const ResourcesSearchInput = document.getElementById(RESOURCES_SEARCH_INPUT_ID);
+    const ResourcesTypeSelector = document.getElementById(RESOURCES_TYPES_SELECTOR_ID);
+
+    const query = ResourcesSearchInput.value.toLowerCase();
     const regex = new RegExp(query, "i");
 
     const options = Array.from(document.getElementById(RESOURCES_SELECTOR_ID).options);
 
     options.forEach(option => {
-        if (option.title.match(regex)) {
+        const resource = resources.find(resource => parseInt(resource.id) === parseInt(option.value));
+
+        console.log(resource, ResourcesTypeSelector.value);
+
+        if (
+            option.title.match(regex) &&
+            (resource.links.some(link => link.type === ResourcesTypeSelector.value) || ResourcesTypeSelector.value === "all")
+        ) {
             option.removeAttribute("hidden");
         } else {
             option.setAttribute("hidden", "hidden");
@@ -154,7 +163,7 @@ const UrlResolver = async (initialUrl) => {
     }
 }
 
-const DownloadURLResource = async (unresolvedUrl, index) => {
+const DownloadURLResource = async (unresolvedUrl) => {
     const url = await UrlResolver(unresolvedUrl);
 
     if (!chrome || !chrome.downloads) {
@@ -174,7 +183,7 @@ const DownloadURLResource = async (unresolvedUrl, index) => {
     return blob;
 }
 
-const DownloadUnknownResource = (resource, index) => {
+const DownloadUnknownResource = (resource) => {
     console.error("[unknown-downloader]: downloading resource.");
 }
 
@@ -183,11 +192,11 @@ const RESOURCES_TYPES_DOWNLOADERS = {
     "UNKNOWN": DownloadUnknownResource
 }
 
-const DownloadResource = (resource, index) => {
-    const downloads = resource.links.map((link, subIndex) => {
+const DownloadResource = (resource) => {
+    const downloads = resource.links.map((link) => {
         const downloader = RESOURCES_TYPES_DOWNLOADERS[link.type] || RESOURCES_TYPES_DOWNLOADERS["UNKNOWN"];
 
-        return downloader(link.url, index * (subIndex + 1));
+        return downloader(link.url);
     });
 
     return downloads;
@@ -200,10 +209,10 @@ const DownloadSelectedResources = async () => {
 
     const selectedResourcesIds = Array.from(selector.selectedOptions).map(option => option.value);
 
-    selectedResourcesIds.forEach((selectedResourceId, index) => {
+    selectedResourcesIds.forEach((selectedResourceId) => {
         const resource = resources.find(resource => resource.id === parseInt(selectedResourceId));
 
-        const resourceBlobs = DownloadResource(resource, index);
+        const resourceBlobs = DownloadResource(resource);
 
         resourceBlobs.forEach((blob, subIndex) => {
             zip.file(`${resource.name}_${subIndex}.pdf`, blob);
