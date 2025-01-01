@@ -1,7 +1,7 @@
 {
 	"manifest_version": 2,
-	"name": "Moodle Downloader",
-	"description": "A chrome extension for downloading Moodle resources",
+	"name": "Better Moodle Downloader",
+	"description": "An easy to use extension for downloading all resources from a Moodle Course.",
 	"version": "1.5.3",
 	"icons": {
 		"16": "assets/icon16.png",
