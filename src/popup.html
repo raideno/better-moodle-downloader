@@ -1,75 +1,69 @@
-<meta charset="UTF-8">
-<!doctype html>
+<!DOCTYPE html>
 <html>
-    <head>
-        <title>moodleDownloader</title>
-        <link rel="stylesheet"  type="text/css" href="../css/style.css">
-        <link rel="stylesheet" href="../css/material.min.css">
-        <script src="../css/material.min.js"></script>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-        <script src="./popup.js"></script>
-    </head>
 
-      <div class="demo-card-wide mdl-card mdl-shadow--2dp">
-        <div class="mdl-card__title">
-          <h2 class="mdl-card__title-text">moodleDownloader 📚</h2>
+<head>
+  <meta charset="UTF-8">
+  <!-- METADATA -->
+  <title>Moodle Downloader</title>
+  <!-- LIBRARIES -->
+  <script src="./libraries/tailwind.min.js"></script>
+  <script src="./libraries/jszip.min.js"></script>
+  <!-- SCRIPTS -->
+  <script type="module" src="./popup.js"></script>
+</head>
+
+<body>
+  <!-- CARD -->
+  <div class=" w-96 h-64">
+    <!-- HIDER -->
+    <div id="hider-container" class="absolute z-50 w-full h-full bg-blue-200 top-0 left-0 bg-opacity-50 backdrop-blur">
+      <div class="w-full h-full flex flex-col items-center justify-center gap-2 p-4">
+        <div class="flex flex-col items-center justify-center gap-1">
+          <div id="hider-title" class="text-lg font-bold text-gray-900">Hider Title</div>
+          <div id="hider-description" class="text-sm text-gray-800 text-center">Lorem ipsum dolor sit amet consectetur
+            adipisicing elit. Amet, molestias?</div>
         </div>
-
-        <div class="mdl-card__actions mdl-card--border">
-
-          <small style="font-size:75%; padding-left: 1%;">Click and drag or use ⌘ key to select multiple options:</small>
-          <div style="padding-left: 1%">
-              <div class="mdl-textfield mdl-js-textfield">
-                <input style="font-size:75%;" class="mdl-textfield__input" type="text" id="search">
-                <label style="font-size:75%;" class="mdl-textfield__label" for="search">search... (regex supported)</label>
-              </div>
-          </div>
-          <select multiple class="mdl-textfield__input" id="resourceSelector">
-          </select>
-          <br>
-          <div style="padding-left: 1%;" id=footer>
-            <div style="zoom: .9">
-              <label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect" for="organize">
-                <input type="checkbox" id="organize" class="mdl-checkbox__input" checked>
-                <span style="font-size:75%;" class="mdl-checkbox__label">Organize into folder (experimental)</span>
-              </label>
-              <label class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect" for="replaceFilename">
-                <input type="checkbox" id="replaceFilename" class="mdl-checkbox__input">
-                <span style="font-size:75%;" class="mdl-checkbox__label">Replace filename with Moodle name</span>
-              </label>
-
-              <label for="resourcesSection" >
-                <br>
-                <br>
-                <span style="font-size:75%;">Hint: Head to the Resouces to download all resources at once!</span>
-                <br>
-                <br>
-              </label>
-
-              <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" id="downloadResources">Download</button>
-              <a href="">
-                <div id="shareLink" class="icon material-icons">share</div>
-              </a>
-              <div style="display: inline;">
-                <a id="sourceCode" href="https://github.com/harsilspatel/moodleDownloader">
-                  <img src="../assets/github120.png" alt="Souce code"  align="right" style="width: 9%; padding-right: 2%;">
-                </a>
-              </div>
-            </div>
-
-            <div hidden='hidden' id=feedbackDiv>
-                <br>
-                <small id=feedbackPrompt>You just downloaded 50th file using this tool! 🎉 <br/> <br/> Consider rating this extension to help other students like yourself find it easily</small>
-                <br>
-                <button class="mdl-button mdl-js-button mdl-button--primary" id=nah>
-                  Nah! 😒
-                </button>
-                <button style='position:absolute; right: 5%;' class="mdl-button mdl-js-button mdl-button--accent" id=sure>
-                    Sure! 😎
-                </button>
-            </div>
-          </div>
+        <div id="hider-button" class="cursor-pointer hover:opacity-75 font-semibold underline text-blue-800">Hider
+          Hider Action
         </div>
       </div>
-    </body>
+    </div>
+
+    <div class="p-0 bg-white w-full h-full flex flex-col items-center gap-0">
+      <!-- CARD HEADER -->
+      <div class="w-full p-4 border-b border-gray-500 flex flex-row items-center justify-between">
+        <div>
+          <h2 class="text-xl font-semibold">📚 Moodle Downloader</h2>
+        </div>
+        <a href="https://github.com/raideno/better-moodle-downloader" target="_blank">
+          <div class="bg-blue-200 rounded-full w-6 h-6 flex items-center justify-center cursor-pointer">
+            <div class="font-bold text-xs">i</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- CARD CONTENT -->
+      <div class="w-full p-4 border-b border-gray-500 space-y-2">
+        <div class="border rounded border-gray-500 active:border-blue-500">
+          <input class="w-full p-2 rounded" placeholder="search (regex is supported)" type="text" id="search">
+        </div>
+
+        <div class="w-full p-2 rounded border border-gray-500 active:border-blue-500">
+          <select multiple class="w-full text-base rounded" id="resources-selector"></select>
+        </div>
+      </div>
+
+      <!-- CARD FOOTER -->
+      <div class="w-full p-4 flex flex-col gap-1">
+        <div><span class="font-semibold text-red-500">NOTE: </span>In order to download moodle resources you must be in
+          the
+          resources page of the moodle course.</div>
+
+        <button class="w-full bg-blue-500 p-4 rounded text-white font-bold disabled:bg-gray-500 disabled:opacity-50"
+          id="main-button" disabled>Main Button</button>
+      </div>
+    </div>
+  </div>
+</body>
+
 </html>

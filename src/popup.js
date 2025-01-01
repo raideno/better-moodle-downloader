@@ -3,301 +3,222 @@
  * Copyright (c) 2018 Harsil Patel
  * https://github.com/harsilspatel/MoodleDownloader
  */
-function main() {
-    // google analytics
-    (function(i, s, o, g, r, a, m) {
-        i["GoogleAnalyticsObject"] = r;
-        (i[r] =
-            i[r] ||
-            function() {
-                (i[r].q = i[r].q || []).push(arguments);
-            }),
-            (i[r].l = 1 * new Date());
-        (a = s.createElement(o)), (m = s.getElementsByTagName(o)[0]);
-        a.async = 1;
-        a.src = g;
-        m.parentNode.insertBefore(a, m);
-    })(
-        window,
-        document,
-        "script",
-        "https://www.google-analytics.com/analytics.js",
-        "ga"
-    );
 
-    ga("create", "UA-119398707-1", "auto");
-    ga("set", "checkProtocolTask", null);
-    ga("send", "pageview");
+import { GenerateZipFilename } from "./modules/utils.js"
+import { HideHider, DisplayHider } from "./modules/hider.js"
+import { GetActiveTabUrl, NavigateTo } from "./modules/tabs.js"
+import { AreWeInMoodleSite, AreWeInMoodleCoursePage, AreWeInMoodleResourcesSection, GetMoodleCourseId, GetResourcesPageUrl } from "./modules/moodle-urls.js"
 
-    // downloadResources on button press
-    const button = document.getElementById("downloadResources");
-    button.addEventListener("click", () => {
-        downloadResources();
-    });
+// TODO: re-implement google analytics.
 
-    document.getElementById("shareLink").addEventListener("click", () => {
-        var copyFrom = document.createElement("textarea");
-        copyFrom.textContent =
-            "https://chrome.google.com/webstore/detail/geckodm/pgkfjobhhfckamidemkddfnnkknomobe";
-        document.body.appendChild(copyFrom);
-        copyFrom.select();
-        document.execCommand("copy");
-        copyFrom.blur();
-        document.body.removeChild(copyFrom);
-    });
+// TODO: completely block the extension if we are not in a moodle page, to start with check that the url contains "moodle" in it, then make it more sofisticated by checking the page content, etc.
+// TODO: if the person isn't in a moodle page, display a blur with a message, but still give the option to display the extension and download in case the system hasn't been able to detect the moodle page.
+// TODO: give the choice for the user to manually enter the moodle course id, and then scrape the resources from the resources page.
+// TODO: give instructions, like some note with instructions that redirect to a video or something that shows how to download.
+// TODO: display the blur thing with a different message when the user is in a moodle site but not in a course page.
 
-    document.getElementById("sourceCode").addEventListener("click", () => {
-        chrome.tabs.create({
-            url: "https:github.com/harsilspatel/moodleDownloader"
-        });
-    });
+const BACKGROUND_SCRIPT_FILE_PATH = "./src/background.js";
 
-    // filter resources on input
-    const searchField = document.getElementById("search");
-    searchField.addEventListener("input", () => {
-        filterOptions();
-    });
+const RESOURCES_SELECTOR_ID = "resources-selector";
+const MAIN_BUTTON_ID = "main-button";
+const RESOURCES_SEARCH_INPUT_ID = "search";
 
-    // executing background.js to populate the select form
-    chrome.tabs.executeScript({ file: "./src/background.js" }, result => {
-        try {
-            const resourceSelector = document.getElementById(
-                "resourceSelector"
-            );
-            const resources = result[0];
-            resourcesList = [...resources];
-            console.log(result);
-            resources.forEach((resource, index) => {
-                const resourceOption = document.createElement("option");
+let resources = [];
 
-                // creating option element such that the text will be
-                // the resource name and the option value its index in the array.
-                resourceOption.value = index.toString();
-                resourceOption.title = resource.name;
-                resourceOption.innerHTML = resource.name;
-                resourceSelector.appendChild(resourceOption);
-            });
-        } catch (error) {
-            console.log(error);
-        }
-    });
-    initStorage();
+const SetupEventListener = (element, event, callback) => {
+    element.addEventListener(event, callback);
 }
 
-function initStorage() {
-    chrome.storage.sync.get(["downloads", "alreadyRequested"], result => {
-        const downloads = result.downloads ? result.downloads : 0;
-        const alreadyRequested = result.alreadyRequested
-            ? result.alreadyRequested
-            : false;
-        chrome.storage.sync.set(
-            { downloads: downloads, alreadyRequested: alreadyRequested },
-            function() {
-                console.log("initialised storage variables");
-            }
-        );
+const PopulateSelector = (resources, selector, selectAll = true) => {
+    resources.forEach((resource, index) => {
+        const option = document.createElement("option");
+
+        option.value = resource.id;
+        option.title = resource.name;
+        option.innerHTML = resource.name;
+
+        if (selectAll)
+            option.selected = true;
+
+        selector.appendChild(option);
     });
+
+    return resources;
 }
 
-function requestFeedback() {
-    chrome.storage.sync.get(["downloads", "alreadyRequested"], result => {
-        console.log("inside requestFeedback");
-        if (result.downloads >= 50 && result.alreadyRequested == false) {
-            console.log("attaching ");
-            const nah = document.getElementById("nah");
-            const sure = document.getElementById("sure");
-            const feedbackDiv = document.getElementById("feedbackDiv");
-            const feedbackPrompt = document.getElementById("feedbackPrompt");
-            feedbackDiv.removeAttribute("hidden");
+const GoToResourcesPage = (rawUrl, courseId) => {
+    const resourcesPageUrl = GetResourcesPageUrl(rawUrl, courseId);
 
-            nah.addEventListener("click", () => {
-                chrome.storage.sync.set({ alreadyRequested: true }, function() {
-                    console.log("alreadyRequested is set to " + true);
-                });
-                nah.setAttribute("hidden", "hidden");
-                sure.setAttribute("hidden", "hidden");
-                feedbackPrompt.innerHTML = "";
-                setTimeout(() => {
-                    feedbackDiv.setAttribute("hidden", "hidden");
-                }, 2000);
-            });
-
-            sure.addEventListener("click", () => {
-                chrome.storage.sync.set({ alreadyRequested: true }, function() {
-                    console.log("alreadyRequested is set to " + true);
-                });
-                nah.setAttribute("hidden", "hidden");
-                sure.setAttribute("hidden", "hidden");
-                feedbackPrompt.innerHTML = "You're a very considerate human! 💝";
-                setTimeout(() => {
-                    feedbackDiv.setAttribute("hidden", "hidden");
-                    chrome.tabs.create({
-                        url:
-                            "https://chrome.google.com/webstore/detail/moodle-downloader/ohhocacnnfaiphiahofcnfakdcfldbnh"
-                    });
-                }, 2000);
-            });
-        }
-    });
+    return NavigateTo(resourcesPageUrl);
 }
 
-function filterOptions() {
-    const searchField = document.getElementById("search");
-    const query = searchField.value.toLowerCase();
-    const regex = new RegExp(query, "i");
-    const options = document.getElementById("resourceSelector").options;
-
-    resourcesList.forEach((resource, index) => {
-        resource.name.match(regex)
-            ? options[index].removeAttribute("hidden")
-            : options[index].setAttribute("hidden", "hidden");
-    });
-}
-
-function updateDownloads(newDownloads) {
-    chrome.storage.sync.get(["downloads"], result => {
-        const value = result.downloads ? result.downloads : 0;
-        console.log("Value currently is " + value);
-        const newValue = value + newDownloads;
-        console.log(typeof value);
-        chrome.storage.sync.set({ downloads: newValue }, function() {
-            console.log("Value is set to " + newValue);
+const LoadResources = () => {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.executeScript({ file: BACKGROUND_SCRIPT_FILE_PATH }, result => {
+            if (chrome.runtime.lastError)
+                reject(`[error]: from background.js script execution.`, chrome.runtime.lastError.message);
+            else
+                resolve(result[0]);
         });
     });
 }
 
-let organizeChecked = false;
-let replaceFilename = false;
+// NOTE: if the main function is executed, assume we are already in a moodle course page but not necessarily in the resources page.
+const Main = async () => {
+    const button = document.getElementById(MAIN_BUTTON_ID);
+    const input = document.getElementById(RESOURCES_SEARCH_INPUT_ID);
 
-function sanitiseFilename(filename) {
-    return filename.replace(/[\\/:*?"<>|]/g, "-");
-}
+    SetupEventListener(input, "input", FilterOptions);
 
-function suggestFilename(downloadItem, suggest) {
-    const item = resourcesList.filter(
-        r => r.downloadOptions.url == downloadItem.url
-    )[0];
-    let filename = downloadItem.filename;
-    const sanitisedItemName = sanitiseFilename(item.name);
+    const tabUrl = await GetActiveTabUrl();
 
-    if (item.type === "URL") {
-        // The filename should be some arbitrary Blob UUID.
-        // We should always replace it with the item's name.
-        filename = sanitisedItemName + ".url";
-    } else if (item.type === "Page") {
-        filename = sanitisedItemName + ".html";
+    if (!AreWeInMoodleSite(tabUrl)) {
+        console.error("[moodle-downloader]: you are not in a Moodle site.");
+
+        DisplayHider(
+            "Not a Moodle Site",
+            "You are not in a Moodle site. Please navigate to a Moodle site and then click the button.",
+            "Still Proceed",
+            HideHider
+        )
+
+        return;
     }
 
-    if (replaceFilename) {
-        const lastDot = filename.lastIndexOf(".");
-        const extension = lastDot === -1 ? "" : filename.slice(lastDot);
-        filename = sanitisedItemName + extension;
+    if (!AreWeInMoodleCoursePage(tabUrl)) {
+        console.error("[moodle-downloader]: you are not in a Moodle course page.");
+
+        DisplayHider(
+            "Not a Moodle Course Page",
+            "You are not in a Moodle course page. Please navigate to the Moodle course page you want to download the resources from.",
+            "Still Proceed",
+            HideHider
+        )
+
+        return;
     }
 
-    if (organizeChecked) {
-        suggest({
-            filename:
-                sanitiseFilename(item.course) +
-                "/" +
-                (item.section && sanitiseFilename(item.section) + "/") +
-                filename
+    HideHider()
+
+    if (!AreWeInMoodleResourcesSection(tabUrl)) {
+        button.removeAttribute("disabled");
+        button.innerText = "Go to the Resources Page";
+
+        SetupEventListener(button, "click", async () => {
+            await GoToResourcesPage(tabUrl, GetMoodleCourseId(tabUrl));
+
+            resources = await LoadResources();
+
+            PopulateSelector(resources, document.getElementById(RESOURCES_SELECTOR_ID));
         });
     } else {
-        suggest({ filename });
+        button.removeAttribute("disabled");
+        button.innerText = "Download Selected Resources";
+
+        resources = await LoadResources();
+
+        PopulateSelector(resources, document.getElementById(RESOURCES_SELECTOR_ID));
+
+        SetupEventListener(button, "click", DownloadSelectedResources);
+    }
+
+}
+
+const FilterOptions = () => {
+    const search = document.getElementById(RESOURCES_SEARCH_INPUT_ID);
+    const query = search.value.toLowerCase();
+    const regex = new RegExp(query, "i");
+
+    const options = Array.from(document.getElementById(RESOURCES_SELECTOR_ID).options);
+
+    options.forEach(option => {
+        if (option.title.match(regex)) {
+            option.removeAttribute("hidden");
+        } else {
+            option.setAttribute("hidden", "hidden");
+        }
+    });
+}
+
+const UrlResolver = async (initialUrl) => {
+    try {
+        const response = await fetch(initialUrl, {
+            method: 'HEAD',
+            redirect: 'follow'
+        });
+
+        return response.url;
+    } catch (error) {
+        console.error(`[url-downloader]: failed to resolve final URL for "${initialUrl}".`);
+        return null;
     }
 }
 
-function downloadResources() {
-    const INTERVAL = 500;
-    const footer = document.getElementById("footer");
-    const button = document.getElementById("downloadResources");
-    const resourceSelector = document.getElementById("resourceSelector");
-    const selectedOptions = Array.from(resourceSelector.selectedOptions);
-    organizeChecked = document.getElementById("organize").checked;
-    replaceFilename = document.getElementById("replaceFilename").checked;
-    const hasDownloadsListener = chrome.downloads.onDeterminingFilename.hasListener(
-        suggestFilename
-    );
+const DownloadURLResource = async (unresolvedUrl, index) => {
+    const url = await UrlResolver(unresolvedUrl);
 
-    // add listener to organize files
-    if (!hasDownloadsListener)
-        chrome.downloads.onDeterminingFilename.addListener(suggestFilename);
+    if (!chrome || !chrome.downloads) {
+        console.error("chrome.downloads API is not available.");
+        return;
+    }
 
-    // hidding the button and showing warning text
-    button.setAttribute("hidden", "hidden");
-    const warning = document.createElement("small");
-    warning.style.color = "red";
-    warning.innerHTML =
-        "Please keep this window open until selected resources are not downloaded...";
-    footer.appendChild(warning);
+    const response = await fetch(url);
 
-    // updating stats
-    updateDownloads(selectedOptions.length);
+    if (!response.ok) {
+        console.error(`[url-downloader]: failed to download "${url}".`);
+        return null;
+    }
 
-    // showing the button and removing the text and requesting for feedback
-    setTimeout(() => {
-        footer.removeChild(warning);
-        button.removeAttribute("hidden");
-        requestFeedback();
-    }, (selectedOptions.length + 4) * INTERVAL);
+    const blob = await response.blob();
 
-    selectedOptions.forEach((option, index) => {
-        const resourceIndex = Number(option.value);
-        const resource = resourcesList[resourceIndex];
-        if (resource.type === "URL") {
-            // We need to get the URL of the redirect and create a blob for it.
-            fetch(resource.downloadOptions.url, { method: "HEAD" }).then(
-                req => {
-                    const blob = new Blob(
-                        [`[InternetShortcut]\nURL=${req.url}\n`],
-                        { type: "text/plain" }
-                    );
-                    const blobUrl = URL.createObjectURL(blob);
-                    const newOptions = {
-                        url: blobUrl
-                    };
-                    resource.downloadOptions = newOptions;
-                    setTimeout(() => {
-                        chrome.downloads.download(newOptions);
-                    }, index * INTERVAL);
-                }
-            );
-        } else if (resource.type === "Page") {
-            fetch(resource.downloadOptions.url)
-                .then(req => {
-                    return req.text();
-                })
-                .then(text => {
-                    // We want to grab "[role='main']" from the text and save that
-                    // as an HTML file.
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(text, "text/html");
-                    const toSave = doc.querySelector("[role='main']").outerHTML;
-                    const blob = new Blob([toSave], { type: "text/html" });
-                    const blobUrl = URL.createObjectURL(blob);
-                    const newOptions = {
-                        url: blobUrl
-                    };
-                    resource.downloadOptions = newOptions;
-                    setTimeout(() => {
-                        chrome.downloads.download(newOptions);
-                    }, index * INTERVAL);
-                });
-        } else {
-            setTimeout(() => {
-                chrome.downloads.download(resource.downloadOptions);
-            }, index * INTERVAL);
-        }
+    return blob;
+}
+
+const DownloadUnknownResource = (resource, index) => {
+    console.error("[unknown-downloader]: downloading resource.");
+}
+
+const RESOURCES_TYPES_DOWNLOADERS = {
+    "URL": DownloadURLResource,
+    "UNKNOWN": DownloadUnknownResource
+}
+
+const DownloadResource = (resource, index) => {
+    const downloads = resource.links.map((link, subIndex) => {
+        const downloader = RESOURCES_TYPES_DOWNLOADERS[link.type] || RESOURCES_TYPES_DOWNLOADERS["UNKNOWN"];
+
+        return downloader(link.url, index * (subIndex + 1));
     });
 
-    ga("send", "event", {
-        eventCategory: "click",
-        eventAction: "downloadResources",
-        eventValue: selectedOptions.length
+    return downloads;
+}
+
+const DownloadSelectedResources = async () => {
+    const zip = new JSZip();
+
+    const selector = document.getElementById(RESOURCES_SELECTOR_ID);
+
+    const selectedResourcesIds = Array.from(selector.selectedOptions).map(option => option.value);
+
+    selectedResourcesIds.forEach((selectedResourceId, index) => {
+        const resource = resources.find(resource => resource.id === parseInt(selectedResourceId));
+
+        const resourceBlobs = DownloadResource(resource, index);
+
+        resourceBlobs.forEach((blob, subIndex) => {
+            zip.file(`${resource.name}_${subIndex}.pdf`, blob);
+        });
+    })
+
+    const blob = await zip.generateAsync({ type: "blob" });
+
+    const url = URL.createObjectURL(blob);
+
+    chrome.downloads.download({
+        url: url,
+        filename: GenerateZipFilename(),
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    main();
-    var resourcesList = [];
-});
+// NOTE: run the main function once all the HTML content is loaded
+SetupEventListener(document, "DOMContentLoaded", Main);
