@@ -4,6 +4,8 @@
  * https://github.com/harsilspatel/MoodleDownloader
  */
 
+import { Button } from "./modules/button.js";
+import { StateParagraph } from "./modules/state-paragraph.js";
 import { GenerateZipFilename } from "./modules/utils.js";
 import { HideHider, DisplayHider } from "./modules/hider.js";
 import { GetActiveTabUrl, NavigateTo } from "./modules/tabs.js";
@@ -13,7 +15,9 @@ import { AreWeInMoodleSite, AreWeInMoodleCoursePage, AreWeInMoodleResourcesSecti
 
 // TODO: for links, beside the original type we should add another one called "resolved-type" which will be the type of the resolved link.
 
-const BACKGROUND_SCRIPT_FILE_PATH = "./src/background.js";
+const STATE_PARAGRAPH_ID = "state-paragraph";
+
+const BACKGROUND_SCRIPT_FILE_PATH = "./background.js";
 
 const RESOURCES_SELECTOR_ID = "resources-selector";
 const MAIN_BUTTON_ID = "main-button";
@@ -66,7 +70,7 @@ const LoadResources = () => {
 
 // NOTE: if the main function is executed, assume we are already in a moodle course page but not necessarily in the resources page.
 const Main = async () => {
-    const button = document.getElementById(MAIN_BUTTON_ID);
+    const button = new Button(MAIN_BUTTON_ID);
 
     const ResourcesSearchInput = document.getElementById(RESOURCES_SEARCH_INPUT_ID);
     const ResourcesTypeSelector = document.getElementById(RESOURCES_TYPES_SELECTOR_ID);
@@ -105,8 +109,8 @@ const Main = async () => {
     HideHider();
 
     if (!AreWeInMoodleResourcesSection(tabUrl)) {
-        button.removeAttribute("disabled");
-        button.innerText = "Go to the Resources Page";
+        button.SetDisabled(false);
+        button.SetText("Go to the Resources Page");
 
         SetupEventListener(button, "click", async () => {
             await GoToResourcesPage(tabUrl, GetMoodleCourseId(tabUrl));
@@ -116,14 +120,14 @@ const Main = async () => {
             PopulateSelector(resources, document.getElementById(RESOURCES_SELECTOR_ID));
         });
     } else {
-        button.removeAttribute("disabled");
-        button.innerText = "Download Selected Resources";
+        button.SetDisabled(false);
+        button.SetText("Download Selected Resources");
 
         resources = await LoadResources();
 
         PopulateSelector(resources, document.getElementById(RESOURCES_SELECTOR_ID));
 
-        SetupEventListener(button, "click", DownloadSelectedResources);
+        SetupEventListener(button.element, "click", DownloadSelectedResources);
     }
 };
 
@@ -207,6 +211,13 @@ const DownloadResource = (resource) => {
 };
 
 const DownloadSelectedResources = async () => {
+    const button = new Button(MAIN_BUTTON_ID);
+    const state = new StateParagraph(STATE_PARAGRAPH_ID);
+
+    state.HideText();
+
+    button.SetLoadingState(true);
+
     // eslint-disable-next-line no-undef
     const zip = new JSZip();
 
@@ -232,7 +243,21 @@ const DownloadSelectedResources = async () => {
     chrome.downloads.download({
         url: url,
         filename: GenerateZipFilename(),
+    }, (downloadId) => {
+        if (downloadId === null) {
+            console.error("[zip-downloader]: failed to download zip file.");
+
+            state.SetTextAndTheme("Failed to download the zip file. Please try again.", StateParagraph.ERROR_THEME);
+        }
+        else {
+            console.log(`[zip-downloader]: downloaded zip file with downloadId: ${downloadId}.`);
+
+            state.SetTextAndTheme("The zip file has been downloaded successfully.", StateParagraph.SUCCESS_THEME);
+        }
+
+        button.SetLoadingState(false);
     });
+
 };
 
 // NOTE: run the main function once all the HTML content is loaded
