@@ -4,10 +4,10 @@
  * https://github.com/harsilspatel/MoodleDownloader
  */
 
-import { GenerateZipFilename } from "./modules/utils.js"
-import { HideHider, DisplayHider } from "./modules/hider.js"
-import { GetActiveTabUrl, NavigateTo } from "./modules/tabs.js"
-import { AreWeInMoodleSite, AreWeInMoodleCoursePage, AreWeInMoodleResourcesSection, GetMoodleCourseId, GetResourcesPageUrl } from "./modules/moodle-urls.js"
+import { GenerateZipFilename } from "./modules/utils.js";
+import { HideHider, DisplayHider } from "./modules/hider.js";
+import { GetActiveTabUrl, NavigateTo } from "./modules/tabs.js";
+import { AreWeInMoodleSite, AreWeInMoodleCoursePage, AreWeInMoodleResourcesSection, GetMoodleCourseId, GetResourcesPageUrl } from "./modules/moodle-urls.js";
 
 // TODO: re-implement google analytics.
 
@@ -25,10 +25,10 @@ let resources = [];
 
 const SetupEventListener = (element, event, callback) => {
     element.addEventListener(event, callback);
-}
+};
 
 const PopulateSelector = (resources, selector, selectAll = true) => {
-    resources.forEach((resource, index) => {
+    resources.forEach((resource) => {
         const option = document.createElement("option");
 
         option.value = resource.id;
@@ -42,24 +42,27 @@ const PopulateSelector = (resources, selector, selectAll = true) => {
     });
 
     return resources;
-}
+};
 
 const GoToResourcesPage = (rawUrl, courseId) => {
     const resourcesPageUrl = GetResourcesPageUrl(rawUrl, courseId);
 
     return NavigateTo(resourcesPageUrl);
-}
+};
 
 const LoadResources = () => {
     return new Promise((resolve, reject) => {
+        // eslint-disable-next-line no-undef
         chrome.tabs.executeScript({ file: BACKGROUND_SCRIPT_FILE_PATH }, result => {
+            // eslint-disable-next-line no-undef
             if (chrome.runtime.lastError)
-                reject(`[error]: from background.js script execution.`, chrome.runtime.lastError.message);
+                // eslint-disable-next-line no-undef
+                reject(`[error]: from background.js script execution: ${chrome.runtime.lastError.message}`);
             else
                 resolve(result[0]);
         });
     });
-}
+};
 
 // NOTE: if the main function is executed, assume we are already in a moodle course page but not necessarily in the resources page.
 const Main = async () => {
@@ -81,7 +84,7 @@ const Main = async () => {
             "You are not in a Moodle site. Please navigate to a Moodle site and then click the button.",
             "Still Proceed",
             HideHider
-        )
+        );
 
         return;
     }
@@ -94,12 +97,12 @@ const Main = async () => {
             "You are not in a Moodle course page. Please navigate to the Moodle course page you want to download the resources from.",
             "Still Proceed",
             HideHider
-        )
+        );
 
         return;
     }
 
-    HideHider()
+    HideHider();
 
     if (!AreWeInMoodleResourcesSection(tabUrl)) {
         button.removeAttribute("disabled");
@@ -122,7 +125,7 @@ const Main = async () => {
 
         SetupEventListener(button, "click", DownloadSelectedResources);
     }
-}
+};
 
 const FilterOptions = () => {
     const ResourcesSearchInput = document.getElementById(RESOURCES_SEARCH_INPUT_ID);
@@ -147,13 +150,13 @@ const FilterOptions = () => {
             option.setAttribute("hidden", "hidden");
         }
     });
-}
+};
 
 const UrlResolver = async (initialUrl) => {
     try {
         const response = await fetch(initialUrl, {
-            method: 'HEAD',
-            redirect: 'follow'
+            method: "HEAD",
+            redirect: "follow"
         });
 
         return response.url;
@@ -161,11 +164,12 @@ const UrlResolver = async (initialUrl) => {
         console.error(`[url-downloader]: failed to resolve final URL for "${initialUrl}".`);
         return null;
     }
-}
+};
 
 const DownloadURLResource = async (unresolvedUrl) => {
     const url = await UrlResolver(unresolvedUrl);
 
+    // eslint-disable-next-line no-undef
     if (!chrome || !chrome.downloads) {
         console.error("chrome.downloads API is not available.");
         return;
@@ -181,16 +185,16 @@ const DownloadURLResource = async (unresolvedUrl) => {
     const blob = await response.blob();
 
     return blob;
-}
+};
 
 const DownloadUnknownResource = (resource) => {
-    console.error("[unknown-downloader]: downloading resource.");
-}
+    console.error(`[unknown-downloader]: downloading resource ${resource.id}.`);
+};
 
 const RESOURCES_TYPES_DOWNLOADERS = {
     "URL": DownloadURLResource,
     "UNKNOWN": DownloadUnknownResource
-}
+};
 
 const DownloadResource = (resource) => {
     const downloads = resource.links.map((link) => {
@@ -200,9 +204,10 @@ const DownloadResource = (resource) => {
     });
 
     return downloads;
-}
+};
 
 const DownloadSelectedResources = async () => {
+    // eslint-disable-next-line no-undef
     const zip = new JSZip();
 
     const selector = document.getElementById(RESOURCES_SELECTOR_ID);
@@ -217,17 +222,18 @@ const DownloadSelectedResources = async () => {
         resourceBlobs.forEach((blob, subIndex) => {
             zip.file(`${resource.name}_${subIndex}.pdf`, blob);
         });
-    })
+    });
 
     const blob = await zip.generateAsync({ type: "blob" });
 
     const url = URL.createObjectURL(blob);
 
+    // eslint-disable-next-line no-undef
     chrome.downloads.download({
         url: url,
         filename: GenerateZipFilename(),
     });
-}
+};
 
 // NOTE: run the main function once all the HTML content is loaded
 SetupEventListener(document, "DOMContentLoaded", Main);

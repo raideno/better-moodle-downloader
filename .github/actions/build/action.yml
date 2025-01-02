@@ -1,0 +1,34 @@
+name: build
+description: Build the project
+inputs:
+  destination-folder:
+    description: "The folder where the project will be built"
+    required: true
+    default: "dist"
+  zip-file-name:
+    description: "The name of the zip file"
+    required: true
+    default: "extension.zip"
+  with-checkout:
+    description: "Whether to checkout the repository or not"
+    required: true
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - name: checkout-repository
+      if: ${{ inputs.with-checkout == 'true' }}
+      uses: actions/checkout@v4
+
+    - name: setup-node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+
+    - name: install-dependencies
+      run: npm ci
+      shell: bash
+
+    - name: build-the-project
+      run: npm run build -- --verbose --output-path=${{ inputs.destination-folder }} --output-filename=${{ inputs.zip-file-name }}
+      shell: bash

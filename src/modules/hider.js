@@ -8,7 +8,7 @@ export const HideHider = () => {
 
     hiderContainer.classList.add("hidden");
     hiderContainer.classList.remove("block");
-}
+};
 
 export const DisplayHider = (title, description, buttonText, buttonCallback) => {
     const hiderContainer = document.getElementById(HIDER_CONTAINER_ID);
@@ -28,4 +28,4 @@ export const DisplayHider = (title, description, buttonText, buttonCallback) => 
     hiderButton.onclick = buttonCallback;
 
     return hiderContainer;
-}
+};

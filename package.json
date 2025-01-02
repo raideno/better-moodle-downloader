@@ -1,0 +1,20 @@
+{
+  "name": "moodle-downloader",
+  "version": "0.1.0",
+  "description": "An easy to use moodle course resources downloader.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build.js --verbose",
+    "lint": "eslint ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "yargs": "^17.7.2",
+    "zip-folder": "^1.0.0"
+  }
+}

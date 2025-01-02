@@ -1,0 +1,19 @@
+name: build
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: build-the-extension
+        uses: ./.github/actions/build
+        with:
+          destination-folder: "dist"
+          with-checkout: true

@@ -14,17 +14,17 @@
 function ExtractLinksFromText(textHtml) {
 	const parser = new DOMParser();
 
-	const doc = parser.parseFromString(textHtml, 'text/html');
+	const doc = parser.parseFromString(textHtml, "text/html");
 
-	const anchorTags = doc.querySelectorAll('a');
+	const anchorTags = doc.querySelectorAll("a");
 
 	const links = Array.from(anchorTags)
-		.map(anchor => anchor.getAttribute('href'))
+		.map(anchor => anchor.getAttribute("href"))
 		// NOTE: to exclude all null or empty href tags
-		.filter(link => link !== null && link !== '');
+		.filter(link => link !== null && link !== "");
 
 	return links.length > 0 ? links : [];
-};
+}
 
 function HtmlTableDataParser(table) {
 	const rawData = [];
@@ -47,7 +47,7 @@ function HtmlTableDataParser(table) {
 			continue;
 
 		// NOTE: if the section name is empty, we should use the previous section name
-		if (rowData[0].name === '')
+		if (rowData[0].name === "")
 			try {
 				rowData[0].name = rawData[rawData.length - 1][0].name;
 			} catch (error) {
