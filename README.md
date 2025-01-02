@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://chrome.google.com/webstore/detail/moodle-downloader/ohhocacnnfaiphiahofcnfakdcfldbnh">
-    <img src="assets/icon512.png" width="128" height="128">
+    <img src="src/assets/icon512.png" width="128" height="128">
   </a>
   <h3 align="center">Better Moodle Downloader</h3>
   <p align="center">A chrome extension for batch downloading Moodle resources.</p>
