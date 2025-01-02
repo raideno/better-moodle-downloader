@@ -10,7 +10,9 @@
 
 A very easy to use browser extension for downloading all the resources from a moodle course.
 
-## Installation 💻
+## Installation
+
+NOTE: Currently the extension isn't available on the stores and you can only install it manually.
 
 ### From a Store
 
